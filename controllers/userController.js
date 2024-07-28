@@ -51,7 +51,7 @@ const getuser = async (req, res) => {
     try {
         let user = await User.findOne({where: {id: id}})
         if(!user){
-            res.status(404).json({
+            return res.status(404).json({
                 message: "User doesn't exist"
             })
         }

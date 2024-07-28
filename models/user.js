@@ -19,7 +19,12 @@ module.exports = (sequelize, DataTypes) => {
     email: DataTypes.STRING,
     gender: DataTypes.STRING,
     password: DataTypes.STRING,
-    number: DataTypes.INTEGER
+    number: DataTypes.INTEGER,
+    uuid: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      allowNull: false
+    }
   }, {
     sequelize,
     modelName: 'User',
