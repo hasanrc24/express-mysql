@@ -4,6 +4,12 @@ const { sign } = require("jsonwebtoken");
 
 const User = db.User
 
+const removePassword = (user) => {
+  const userData = user.get({ plain: true });
+  delete userData.password;
+  return userData;
+};
+
 const getusers = async (req, res) => {
     try {
         let users = await User.findAll({})
@@ -67,7 +73,7 @@ const getuser = async (req, res) => {
 const userLogin = async (req, res) => {
     const { email, password } = req.body;
     try {
-        let user = await User.findOne({where : {email: email}})
+        let user = await User.scope('withPassword').findOne({where : {email: email}})
         if (!user) {
           return res.status(400).json({
             message: "Invalid credentials"
@@ -81,7 +87,7 @@ const userLogin = async (req, res) => {
           });
         }
         res.status(200).json({
-            users: user
+            users: removePassword(user)
         })
     } catch (error) {
         console.log(error)
