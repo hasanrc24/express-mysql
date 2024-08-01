@@ -100,4 +100,20 @@ const userLogin = async (req, res) => {
     }
 }
 
-module.exports = { getusers, createUser, getuser, userLogin }
+const userLogout = async (req, res) => {
+    try {
+        await User.update(
+            {refreshToken: null},
+            {
+                where: {
+                    uuid: req.user.uuid
+                }
+            }
+        )
+        res.status(200).json({message: "User logged out successfully!"})
+    } catch (error) {
+        res.status(500).json({message: "Something went wrong"})
+    }
+}
+
+module.exports = { getusers, createUser, getuser, userLogin, userLogout }
