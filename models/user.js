@@ -24,7 +24,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       allowNull: false
-    }
+    },
+    refreshToken: DataTypes.STRING,
   }, {
     sequelize,
     modelName: 'User',

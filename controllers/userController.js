@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const db = require("../models");
-const { sign } = require("jsonwebtoken");
+const { generateAccessAndRefreshToken } = require('../utils/utils');
 
 const User = db.User
 
@@ -55,7 +55,7 @@ const createUser = async (req, res) => {
 const getuser = async (req, res) => {
     const id = req.params.id
     try {
-        let user = await User.findOne({where: {id: id}})
+        let user = await User.findOne({where: {id: id}, attributes: { exclude: ['refreshToken'] }})
         if(!user){
             return res.status(404).json({
                 message: "User doesn't exist"
@@ -73,7 +73,7 @@ const getuser = async (req, res) => {
 const userLogin = async (req, res) => {
     const { email, password } = req.body;
     try {
-        let user = await User.scope('withPassword').findOne({where : {email: email}})
+        let user = await User.scope('withPassword').findOne({where : {email: email}, attributes: { exclude: ['refreshToken']}})
         if (!user) {
           return res.status(400).json({
             message: "Invalid credentials"
@@ -86,8 +86,13 @@ const userLogin = async (req, res) => {
             message: "Invalid credentials"
           });
         }
+        const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user?.uuid)
         res.status(200).json({
-            users: removePassword(user)
+            user: removePassword(user),
+            token: {
+                accessToken,
+                refreshToken
+            }
         })
     } catch (error) {
         console.log(error)
