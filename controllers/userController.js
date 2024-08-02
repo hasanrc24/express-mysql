@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const db = require("../models");
 const { generateAccessAndRefreshToken } = require('../utils/utils');
+const jwt = require("jsonwebtoken")
 
 const User = db.User
 
@@ -116,4 +117,30 @@ const userLogout = async (req, res) => {
     }
 }
 
-module.exports = { getusers, createUser, getuser, userLogin, userLogout }
+const refreshAccessToken = async (req, res) => {
+    let {refreshToken} = req.body;
+    if(!refreshToken){
+        return res.status(401).json({message: "Refresh token is not provided"})
+    }
+    try {
+        let decodedRefreshToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        let user = await User.findOne({where: {uuid: decodedRefreshToken?.uuid}});
+        if(refreshToken !== user?.refreshToken){
+            return res.status(401).json({message: "Invalid refresh token"})
+        }
+
+        const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshToken(user.uuid)
+        
+        res.status(200).json({
+            message: "Refresh token generated successfully!",
+            tokens: {
+                accessToken,
+                refreshToken: newRefreshToken
+            }
+        })
+    } catch (error) {
+        res.status(401).json({message: "Invalid refresh token"})
+    }
+}
+
+module.exports = { getusers, createUser, getuser, userLogin, userLogout, refreshAccessToken }
