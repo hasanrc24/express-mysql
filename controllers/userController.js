@@ -23,7 +23,7 @@ const getusers = asyncHandler(async (req, res) => {
     }
 })
 
-const createUser = async (req, res) => {
+const createUser = asyncHandler(async (req, res) => {
     const { firstName, lastName, gender, email, password, number } = req.body;
 
     if (!firstName || !lastName || !gender || !email || !password || !number) {
@@ -50,9 +50,9 @@ const createUser = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Database error', error: error });
     }
-}
+})
 
-const updateUser = async (req, res) => {
+const updateUser = asyncHandler(async (req, res) => {
     const {id} = req.params;
     const { firstName, lastName, gender, email, number } = req.body;
     
@@ -77,9 +77,9 @@ const updateUser = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Database error', error: error });
     }
-}
+})
 
-const getuser = async (req, res) => {
+const getuser = asyncHandler(async (req, res) => {
     const id = req.params.id
     try {
         let user = req.user;
@@ -97,9 +97,9 @@ const getuser = async (req, res) => {
         console.log(error)
         res.status(500)
     }
-}
+})
 
-const userLogin = async (req, res) => {
+const userLogin = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     try {
         let user = await User.scope('withPassword').findOne({where : {email: email}, attributes: { exclude: ['refreshToken']}})
@@ -126,9 +126,9 @@ const userLogin = async (req, res) => {
     } catch (error) {
         res.status(500)
     }
-}
+})
 
-const userLogout = async (req, res) => {
+const userLogout = asyncHandler(async (req, res) => {
     try {
         await User.update(
             {refreshToken: null},
@@ -142,9 +142,9 @@ const userLogout = async (req, res) => {
     } catch (error) {
         res.status(500).json({message: "Something went wrong"})
     }
-}
+})
 
-const refreshAccessToken = async (req, res) => {
+const refreshAccessToken = asyncHandler(async (req, res) => {
     let {refreshToken} = req.body;
     if(!refreshToken){
         return res.status(401).json({message: "Refresh token is not provided"})
@@ -167,6 +167,6 @@ const refreshAccessToken = async (req, res) => {
     } catch (error) {
         res.status(401).json({message: "Invalid refresh token"})
     }
-}
+})
 
 module.exports = { getusers, createUser, getuser, userLogin, userLogout, refreshAccessToken, updateUser }
