@@ -5,7 +5,7 @@ const router = express.Router()
 
 router.post('/create', createUser)
 router.put('/update/:id', verifyJwt, updateUser)
-router.get("/list", getusers)
+router.get("/list", verifyJwt, getusers)
 router.get("/auth/logout", verifyJwt, userLogout)
 router.post("/auth/login", userLogin)
 router.post("/auth/refresh-token", refreshAccessToken)

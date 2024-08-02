@@ -1,11 +1,15 @@
 const express = require("express");
 const bodyParser = require("body-parser")
 const userRoutes = require("./routes/userRoutes")
+const cors = require("cors")
+const dotenv = require("dotenv");
 // const pool = require("./config/database")
 
 const app = express()
+app.use(cors({
+  origin: "*"
+}))
 app.use(express.json());
-const dotenv = require("dotenv");
 dotenv.config()
 
 app.get('/', function (req, res) {
