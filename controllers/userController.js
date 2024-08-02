@@ -53,6 +53,34 @@ const createUser = async (req, res) => {
     }
 }
 
+const updateUser = async (req, res) => {
+    const {id} = req.params;
+    const { firstName, lastName, gender, email, number } = req.body;
+    
+    try {
+        let user = req.user;
+        if(id != req?.user?.id){
+            return res.status(400).json({ message: "User doesn't match!" });
+        }
+        // let user = await User.findOne({where : {id: id}, attributes: {exclude: ['refreshToken']}})
+        if (!user) {
+            return res.status(400).json({ message: 'User not found!' });
+        }
+
+        await user.update({
+            firstName: firstName || user.firstName,
+            lastName: lastName || user.lastName,
+            gender: gender || user.gender,
+            email: email || user.email,
+            number: number || user.number
+        })
+        res.status(200).json({ message: 'User updated successfully', user: user });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: 'Database error', error: error });
+    }
+}
+
 const getuser = async (req, res) => {
     const id = req.params.id
     try {
@@ -143,4 +171,4 @@ const refreshAccessToken = async (req, res) => {
     }
 }
 
-module.exports = { getusers, createUser, getuser, userLogin, userLogout, refreshAccessToken }
+module.exports = { getusers, createUser, getuser, userLogin, userLogout, refreshAccessToken, updateUser }
