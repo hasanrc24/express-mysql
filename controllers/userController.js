@@ -4,6 +4,7 @@ const { generateAccessAndRefreshToken } = require('../utils/utils');
 const jwt = require("jsonwebtoken");
 const { asyncHandler } = require('../utils/asyncHandler');
 const ApiResponse = require('../utils/ApiResponse');
+const ApiError = require('../utils/ApiError');
 
 const User = db.User
 
@@ -81,22 +82,24 @@ const updateUser = asyncHandler(async (req, res) => {
 
 const getuser = asyncHandler(async (req, res) => {
     const id = req.params.id
-    try {
+    // try {
         let user = req.user;
-        if(id != req?.user?.id){
-            return res.status(400).json({ message: "User doesn't match!" });
+        if(id != user?.id){
+            // return res.status(400).json({ message: "User doesn't match!" });
+            throw new ApiError(400, "User doesn't match!")
         }
         // let user = await User.findOne({where: {id: id}, attributes: { exclude: ['refreshToken'] }})
         if(!user){
-            return res.status(404).json({
-                message: "User doesn't exist"
-            })
+            // return res.status(404).json({
+            //     message: "User doesn't exist"
+            // })
+            throw new ApiError(400, "User doesn't exist")
         }
         res.status(200).json(new ApiResponse(200, {user: user}, 'User data'))
-    } catch (error) {
-        console.log(error)
-        res.status(500)
-    }
+    // } catch (error) {
+    //     // console.log(error)
+    //     res.status(error.statusCode).send(error)
+    // }
 })
 
 const userLogin = asyncHandler(async (req, res) => {
