@@ -3,9 +3,10 @@ const { getusers, createUser, getuser, userLogin, userLogout, refreshAccessToken
 const { verifyJwt } = require("../middlewares/authMiddleware");
 const upload = require("../middlewares/imageMiddleware");
 const { multerErrorHandler } = require("../utils/utils");
+const { validateUserCreation } = require("../middlewares/userValidationMiddleware");
 const router = express.Router()
 
-router.post('/create', upload.single('profileImage'), createUser)
+router.post('/create', upload.single('profileImage'), validateUserCreation, createUser)
 router.put('/update/:id', verifyJwt, upload.single('profileImage'), multerErrorHandler, updateUser)
 router.get("/list", verifyJwt, getusers)
 router.get("/auth/logout", verifyJwt, userLogout)
