@@ -3,8 +3,11 @@ const db = require("../models");
 const { generateAccessAndRefreshToken } = require('../utils/utils');
 const jwt = require("jsonwebtoken");
 const { asyncHandler } = require('../utils/asyncHandler');
+const fs = require("fs")
 const ApiResponse = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
+const path = require("path");
+const upload = require('../middlewares/imageMiddleware');
 
 const User = db.User
 
@@ -56,23 +59,36 @@ const createUser = asyncHandler(async (req, res) => {
 const updateUser = asyncHandler(async (req, res) => {
     const {id} = req.params;
     const { firstName, lastName, gender, email, number } = req.body;
+    let user = req.user;
+    const file = req.file;
+    let profilePicture;
     
     try {
-        let user = req.user;
         if(id != req?.user?.id){
             return res.status(400).json({ message: "User doesn't match!" });
         }
-        // let user = await User.findOne({where : {id: id}, attributes: {exclude: ['refreshToken']}})
-        if (!user) {
-            return res.status(400).json({ message: 'User not found!' });
+
+        if(file){
+            profilePicture = `/uploads/${file.filename}`;
+            if(user.profileImage){
+                const oldProfileImagePath = path.join(__dirname, '..', user.profileImage);
+                fs.unlink(oldProfileImagePath, err => {
+                    if (err) console.error('Error deleting old profile picture:', err);
+                  });
+            }
         }
+        // let user = await User.findOne({where : {id: id}, attributes: {exclude: ['refreshToken']}})
+        // if (!user) {
+        //     return res.status(400).json({ message: 'User not found!' });
+        // }
 
         await user.update({
             firstName: firstName || user.firstName,
             lastName: lastName || user.lastName,
             gender: gender || user.gender,
             email: email || user.email,
-            number: number || user.number
+            number: number || user.number,
+            profileImage: profilePicture || user.profileImage
         })
         res.status(200).json(new ApiResponse(200, {user: user}, 'User updated successfully!'));
     } catch (error) {

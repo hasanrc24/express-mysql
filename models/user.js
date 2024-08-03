@@ -20,6 +20,7 @@ module.exports = (sequelize, DataTypes) => {
     gender: DataTypes.STRING,
     password: DataTypes.STRING,
     number: DataTypes.INTEGER,
+    profileImage: DataTypes.STRING,
     uuid: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
