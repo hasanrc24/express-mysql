@@ -1,15 +1,15 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcrypt");
 const db = require("../models");
-const { generateAccessAndRefreshToken } = require('../utils/utils');
+const { generateAccessAndRefreshToken } = require("../utils/utils");
 const jwt = require("jsonwebtoken");
-const { asyncHandler } = require('../utils/asyncHandler');
-const fs = require("fs")
-const ApiResponse = require('../utils/ApiResponse');
-const ApiError = require('../utils/ApiError');
+const { asyncHandler } = require("../utils/asyncHandler");
+const fs = require("fs");
+const ApiResponse = require("../utils/ApiResponse");
+const ApiError = require("../utils/ApiError");
 const path = require("path");
-const upload = require('../middlewares/imageMiddleware');
+const upload = require("../middlewares/imageMiddleware");
 
-const User = db.User
+const User = db.User;
 
 const removePassword = (user) => {
   const userData = user.get({ plain: true });
@@ -18,174 +18,179 @@ const removePassword = (user) => {
 };
 
 const getusers = asyncHandler(async (req, res) => {
-    try {
-        let users = await User.findAll({ attributes: { exclude: ["refreshToken"] }})
-        res.status(200).json(new ApiResponse(200, {users: users}, 'Users list'))
-    } catch (error) {
-        console.log(error)
-        res.status(500)
-    }
-})
+  let users = await User.findAll({ attributes: { exclude: ["refreshToken"] } });
+  if (!users) {
+    throw new ApiError(500, "Internal server problem");
+  }
+  res.status(200).json(new ApiResponse(200, { users: users }, "Users list"));
+});
 
 const createUser = asyncHandler(async (req, res) => {
-    const { firstName, lastName, gender, email, password, number } = req.body;
+  const { firstName, lastName, gender, email, password, number } = req.body;
 
-    if (!firstName || !lastName || !gender || !email || !password || !number) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
-    try {
-        let existingUser = await User.findAll({where : {email: email}})
-        if (existingUser.length > 0) {
-            return res.status(400).json({ message: 'Email already exists' });
-        }
+  if (!firstName || !lastName || !gender || !email || !password || !number) {
+    throw new ApiError(400, "All fields are required");
+  }
+  let existingUser = await User.findAll({ where: { email: email } });
+  if (existingUser.length > 0) {
+    throw new ApiError(400, "Email already exists");
+  }
 
-        const hashedPassword = await bcrypt.hash(password, 10)
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-        const newUser = {
-            firstName,
-            lastName,
-            gender,
-            email,
-            password: hashedPassword,
-            number
-        };
-        const user = await User.create(newUser)
-        res.status(201).json(new ApiResponse(201, {user: user}, 'Users created successfully!'));
-    } catch (error) {
-        res.status(500).json({ message: 'Database error', error: error });
-    }
-})
+  const newUser = {
+    firstName,
+    lastName,
+    gender,
+    email,
+    password: hashedPassword,
+    number,
+  };
+  const user = await User.create(newUser);
+  res
+    .status(201)
+    .json(new ApiResponse(201, { user: user }, "Users created successfully!"));
+});
 
 const updateUser = asyncHandler(async (req, res) => {
-    const {id} = req.params;
-    const { firstName, lastName, gender, email, number } = req.body;
-    let user = req.user;
-    const file = req.file;
-    let profilePicture;
-    
-    try {
-        if(id != req?.user?.id){
-            return res.status(400).json({ message: "User doesn't match!" });
-        }
+  const { id } = req.params;
+  const { firstName, lastName, gender, email, number } = req.body;
+  const file = req.file;
+  let user = req.user;
+  let profilePicture;
 
-        if(file){
-            profilePicture = `/uploads/${file.filename}`;
-            if(user.profileImage){
-                const oldProfileImagePath = path.join(__dirname, '..', user.profileImage);
-                fs.unlink(oldProfileImagePath, err => {
-                    if (err) console.error('Error deleting old profile picture:', err);
-                  });
-            }
-        }
-        // let user = await User.findOne({where : {id: id}, attributes: {exclude: ['refreshToken']}})
-        // if (!user) {
-        //     return res.status(400).json({ message: 'User not found!' });
-        // }
+  if (id != req?.user?.id) {
+    throw new ApiError(
+      400,
+      "You are not authorized to update this user's data!"
+    );
+  }
 
-        await user.update({
-            firstName: firstName || user.firstName,
-            lastName: lastName || user.lastName,
-            gender: gender || user.gender,
-            email: email || user.email,
-            number: number || user.number,
-            profileImage: profilePicture || user.profileImage
-        })
-        res.status(200).json(new ApiResponse(200, {user: user}, 'User updated successfully!'));
-    } catch (error) {
-        res.status(500).json({ message: 'Database error', error: error });
+  if (file) {
+    profilePicture = `/uploads/${file.filename}`;
+    if (user.profileImage) {
+      const oldProfileImagePath = path.join(__dirname, "..", user.profileImage);
+      fs.unlink(oldProfileImagePath, (err) => {
+        if (err) console.error("Error deleting old profile picture:", err);
+      });
     }
-})
+  }
+
+  await user.update({
+    firstName: firstName || user.firstName,
+    lastName: lastName || user.lastName,
+    gender: gender || user.gender,
+    email: email || user.email,
+    number: number || user.number,
+    profileImage: profilePicture || user.profileImage,
+  });
+  res
+    .status(200)
+    .json(new ApiResponse(200, { user: user }, "User updated successfully!"));
+});
 
 const getuser = asyncHandler(async (req, res) => {
-    const id = req.params.id
-    // try {
-        let user = req.user;
-        if(id != user?.id){
-            // return res.status(400).json({ message: "User doesn't match!" });
-            throw new ApiError(400, "User doesn't match!")
-        }
-        // let user = await User.findOne({where: {id: id}, attributes: { exclude: ['refreshToken'] }})
-        if(!user){
-            // return res.status(404).json({
-            //     message: "User doesn't exist"
-            // })
-            throw new ApiError(400, "User doesn't exist")
-        }
-        res.status(200).json(new ApiResponse(200, {user: user}, 'User data'))
-    // } catch (error) {
-    //     // console.log(error)
-    //     res.status(error.statusCode).send(error)
-    // }
-})
+  const id = req.params.id;
+  let user = req.user;
+  if (id != user?.id) {
+    throw new ApiError(
+      400,
+      "You are not authoried to access this user's data!"
+    );
+  }
+  if (!user) {
+    throw new ApiError(400, "User doesn't exist");
+  }
+  res.status(200).json(new ApiResponse(200, { user: user }, "User data"));
+});
 
 const userLogin = asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        let user = await User.scope('withPassword').findOne({where : {email: email}, attributes: { exclude: ['refreshToken']}})
-        if (!user) {
-          return res.status(400).json({
-            message: "Invalid credentials"
-          });
-        }
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+  const { email, password } = req.body;
+  let user = await User.scope("withPassword").findOne({
+    where: { email: email },
+    attributes: { exclude: ["refreshToken"] },
+  });
+  if (!user) {
+    throw new ApiError(400, "Invalid email or passowrd");
+  }
+  const isPasswordValid = await bcrypt.compare(password, user.password);
 
-        if (!isPasswordValid) {
-        return res.status(400).json({
-            message: "Invalid credentials"
-          });
-        }
-        const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user?.uuid)
-        res.status(200).json(new ApiResponse(200, {
-            user: removePassword(user),
-            token: {
-                accessToken,
-                refreshToken
-            }
-        }, "User logged in seccessfully"))
-    } catch (error) {
-        res.status(500)
-    }
-})
+  if (!isPasswordValid) {
+    throw new ApiError(400, "Invalid email or passowrd");
+  }
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user?.uuid
+  );
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        user: removePassword(user),
+        token: {
+          accessToken,
+          refreshToken,
+        },
+      },
+      "User logged in seccessfully"
+    )
+  );
+});
 
 const userLogout = asyncHandler(async (req, res) => {
-    try {
-        await User.update(
-            {refreshToken: null},
-            {
-                where: {
-                    uuid: req.user.uuid
-                }
-            }
-        )
-        res.status(200).json(new ApiResponse(200, {}, "User logged out successfully!"))
-    } catch (error) {
-        res.status(500).json({message: "Something went wrong"})
-    }
-})
+  try {
+    await User.update(
+      { refreshToken: null },
+      {
+        where: {
+          uuid: req.user.uuid,
+        },
+      }
+    );
+    res
+      .status(200)
+      .json(new ApiResponse(200, {}, "User logged out successfully!"));
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong" });
+  }
+});
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-    let {refreshToken} = req.body;
-    if(!refreshToken){
-        return res.status(401).json({message: "Refresh token is not provided"})
-    }
-    try {
-        let decodedRefreshToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-        let user = await User.findOne({where: {uuid: decodedRefreshToken?.uuid}});
-        if(refreshToken !== user?.refreshToken){
-            return res.status(401).json({message: "Invalid refresh token"})
-        }
+  let { refreshToken } = req.body;
+  if (!refreshToken) {
+    throw new ApiError(401, "Refresh token is not provided");
+  }
+  let decodedRefreshToken = jwt.verify(
+    refreshToken,
+    process.env.REFRESH_TOKEN_SECRET
+  );
+  let user = await User.findOne({ where: { uuid: decodedRefreshToken?.uuid } });
+  if (refreshToken !== user?.refreshToken) {
+    throw new ApiError(401, "Invalid token");
+  }
 
-        const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshToken(user.uuid)
-        
-        res.status(200).json(new ApiResponse(200, {
-            tokens: {
-                accessToken,
-                refreshToken: newRefreshToken
-            }
-        }, 'Tokens generated successfully!'))
-    } catch (error) {
-        res.status(401).json({message: "Invalid refresh token"})
-    }
-})
+  const { accessToken, refreshToken: newRefreshToken } =
+    await generateAccessAndRefreshToken(user.uuid);
 
-module.exports = { getusers, createUser, getuser, userLogin, userLogout, refreshAccessToken, updateUser }
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        tokens: {
+          accessToken,
+          refreshToken: newRefreshToken,
+        },
+      },
+      "Tokens generated successfully!"
+    )
+  );
+});
+
+module.exports = {
+  getusers,
+  createUser,
+  getuser,
+  userLogin,
+  userLogout,
+  refreshAccessToken,
+  updateUser,
+};
