@@ -27,6 +27,7 @@ const getusers = asyncHandler(async (req, res) => {
 
 const createUser = asyncHandler(async (req, res) => {
   const { firstName, lastName, gender, email, password, number } = req.body;
+  const file = req.file;
 
   if (!firstName || !lastName || !gender || !email || !password || !number) {
     throw new ApiError(400, "All fields are required");
@@ -46,10 +47,15 @@ const createUser = asyncHandler(async (req, res) => {
     password: hashedPassword,
     number,
   };
+  if(file){
+    newUser.profileImage = `/uploads/${file.filename}`
+  }
   const user = await User.create(newUser);
+  const jsonUser = user.toJSON()
+  delete jsonUser.password
   res
     .status(201)
-    .json(new ApiResponse(201, { user: user }, "Users created successfully!"));
+    .json(new ApiResponse(201, { user: jsonUser }, "Users created successfully!"));
 });
 
 const updateUser = asyncHandler(async (req, res) => {
