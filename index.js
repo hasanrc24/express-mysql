@@ -3,6 +3,7 @@ const bodyParser = require("body-parser")
 const userRoutes = require("./routes/userRoutes")
 const cors = require("cors")
 const dotenv = require("dotenv");
+const path = require("path")
 // const pool = require("./config/database")
 
 const app = express()
@@ -11,6 +12,8 @@ app.use(cors({
 }))
 app.use(express.json());
 dotenv.config()
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/', function (req, res) {
   res.send('Hello World')
