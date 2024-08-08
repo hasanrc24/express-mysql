@@ -6,8 +6,8 @@ const { multerErrorHandler } = require("../utils/utils");
 const { validateUserCreation } = require("../middlewares/userValidationMiddleware");
 const router = express.Router()
 
-router.post('/create', upload.single('profileImage'), validateUserCreation, createUser)
-router.put('/update/:id', verifyJwt, upload.single('profileImage'), multerErrorHandler, updateUser)
+router.post('/create', upload, multerErrorHandler, validateUserCreation, createUser)
+router.put('/update/:id', verifyJwt, upload, multerErrorHandler, updateUser)
 router.get("/list", verifyJwt, getusers)
 router.get("/auth/logout", verifyJwt, userLogout)
 router.post("/auth/login", userLogin)

@@ -48,7 +48,12 @@ const createUser = asyncHandler(async (req, res) => {
     number,
   };
   if(file){
-    newUser.profileImage = `/uploads/${file.filename}`
+    const filename = `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`;
+    const filePath = path.join(__dirname, '../uploads/', filename);
+
+    // Save the file to disk only after validation passes
+    fs.writeFileSync(filePath, file.buffer);
+    newUser.profileImage = `/uploads/${filename}`
   }
   const user = await User.create(newUser);
   const jsonUser = user.toJSON()
@@ -73,13 +78,19 @@ const updateUser = asyncHandler(async (req, res) => {
   }
 
   if (file) {
-    profilePicture = `/uploads/${file.filename}`;
+    const filename = `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`;
+    profilePicture = `/uploads/${filename}`;
+
     if (user.profileImage) {
       const oldProfileImagePath = path.join(__dirname, "..", user.profileImage);
       fs.unlink(oldProfileImagePath, (err) => {
         if (err) console.error("Error deleting old profile picture:", err);
       });
     }
+
+    // Save the new profile image to disk
+    const filePath = path.join(__dirname, '../uploads/', filename);
+    fs.writeFileSync(filePath, file.buffer);
   }
 
   await user.update({

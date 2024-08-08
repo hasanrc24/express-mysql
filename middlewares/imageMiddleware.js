@@ -1,14 +1,16 @@
 const multer = require("multer");
-const path = require("path")
+const path = require("path");
+const ApiError = require("../utils/ApiError");
 
-const storage = multer.diskStorage({
-    destination: function(req, file, cb){
-        cb(null, './uploads/')
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`)
-    }
-})
+// const storage = multer.diskStorage({
+//     destination: function(req, file, cb){
+//         cb(null, './uploads/')
+//     },
+//     filename: (req, file, cb) => {
+//         cb(null, `${file.fieldname}-${req.user.uuid}-${Date.now()}${path.extname(file.originalname)}`)
+//     }
+// })
+const storage = multer.memoryStorage()
 
 const upload = multer({
     storage,
@@ -16,7 +18,7 @@ const upload = multer({
     fileFilter: (req, file, cb) => {
         checkFileType(file, cb)
     }
-})
+}).single('profileImage');
 
 function checkFileType(file, cb) {
   const filetypes = /jpeg|jpg|png|gif/;
@@ -26,7 +28,7 @@ function checkFileType(file, cb) {
   if (mimetype && extname) {
     return cb(null, true);
   } else {
-    cb(new Error('Images only'));
+    cb(new ApiError(400, 'Please upload image only'), false);
   }
 }
 
