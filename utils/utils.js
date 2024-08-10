@@ -48,4 +48,4 @@ const createPasswordResetToken = (user) => {
   return resetToken
 }
 
-module.exports = { generateAccessAndRefreshToken, multerErrorHandler, createPasswordResetToken };
+module.exports = { generateAccessAndRefreshToken, multerErrorHandler, createPasswordResetToken, getCryptoToken, getCryptoEncryptedToken };

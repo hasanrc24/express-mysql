@@ -44,7 +44,22 @@ const validatePasswordChange = [
   }),
 ]
 
+const validatePasswordReset = [
+  check('newPassword').notEmpty().withMessage('New password is required'),
+  check('confirmPassword').notEmpty().withMessage('Confirm password is required'),
+
+  asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+    //   return res.status(400).json({ errors: errors.array() });
+        throw new ApiError(400, 'Please provide required fields', errors.array())
+    }
+    next();
+  }),
+]
+
 module.exports = {
   validateUserCreation,
   validatePasswordChange,
+  validatePasswordReset
 };

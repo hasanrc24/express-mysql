@@ -39,11 +39,11 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'User',
     defaultScope: {
-      attributes: { exclude: ['password'] },
+      attributes: { exclude: ['password', 'passwordResetToken', 'resetTokenExpire'] },
     },
     scopes: {
       withPassword: {
-        attributes: {},
+        attributes: { exclude: ['passwordResetToken', 'resetTokenExpire'] },
       },
     },
   });

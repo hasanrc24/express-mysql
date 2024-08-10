@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const db = require("../models");
-const { generateAccessAndRefreshToken, createPasswordResetToken } = require("../utils/utils");
+const { generateAccessAndRefreshToken, createPasswordResetToken, getCryptoEncryptedToken } = require("../utils/utils");
 const jwt = require("jsonwebtoken");
 const { asyncHandler } = require("../utils/asyncHandler");
 const fs = require("fs");
@@ -9,6 +9,7 @@ const ApiError = require("../utils/ApiError");
 const path = require("path");
 const upload = require("../middlewares/imageMiddleware");
 const sendEmail = require("../utils/email");
+const { Op } = require('sequelize');
 
 const User = db.User;
 
@@ -243,6 +244,34 @@ const forgotPassword = asyncHandler(async (req, res) => {
   res.status(200).send(new ApiResponse(200, {}, 'Please check your email to reset the password'))
 })
 
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  const { newPassword, confirmPassword } = req.body
+
+  if(!token){
+    throw new ApiError(400, "Token is not provided!")
+  }
+  const hashedToken = getCryptoEncryptedToken(token)
+  const user = await User.findOne({where: {passwordResetToken: hashedToken, resetTokenExpire: {
+    [Op.gt]: Date.now(),
+  },}})
+
+  if(!user){
+    throw new ApiError(400, 'Invalid token')
+  }
+
+  if(newPassword !== confirmPassword){
+    throw new ApiError(400, 'Passwords does not match')
+  }
+  const hashedPassword = await bcrypt.hash(confirmPassword, 10);
+  await user.update({
+    password: hashedPassword,
+    passwordResetToken: null,
+    resetTokenExpire: null
+  })
+  res.status(200).json(new ApiResponse(200, {}, "Password updated successfully"))
+})
+
 module.exports = {
   getusers,
   createUser,
@@ -252,5 +281,6 @@ module.exports = {
   refreshAccessToken,
   updateUser,
   changePassword,
-  forgotPassword
+  forgotPassword,
+  resetPassword
 };
