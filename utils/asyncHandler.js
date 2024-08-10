@@ -6,7 +6,7 @@ const asyncHandler = (func) => async (req, res, next) => {
             statusCode: error.statusCode,
             success: false,
             message: error.message,
-            ...(error.errors && {
+            ...(error.errors.length && {
                 validation: error.errors
             }),
         })

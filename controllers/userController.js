@@ -118,7 +118,7 @@ const getuser = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(400, "User doesn't exist");
   }
-  res.status(200).json(new ApiResponse(200, { user: user }, "User data"));
+  res.status(200).json(new ApiResponse(200, { user: removePassword(user) }, "User data"));
 });
 
 const userLogin = asyncHandler(async (req, res) => {
@@ -202,6 +202,23 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   );
 });
 
+const changePassword = asyncHandler(async (req, res) => {
+  let { currentPassword, newPassword, confirmPassword } = req.body;
+  const isPasswordValid = await bcrypt.compare(currentPassword, req.user.password)
+  if (!isPasswordValid) {
+    throw new ApiError(400, "Current password is incorrect");
+  }
+  if(newPassword !== confirmPassword){
+    throw new ApiError(400, "Passwords does not match!");
+  }
+
+  const hashedPassword = await bcrypt.hash(confirmPassword, 10);
+  await req.user.update({
+    password: hashedPassword
+  })
+  res.status(200).json(new ApiResponse(200, {user: removePassword(req.user)}, "Password changed successfully"))
+})
+
 module.exports = {
   getusers,
   createUser,
@@ -210,4 +227,5 @@ module.exports = {
   userLogout,
   refreshAccessToken,
   updateUser,
+  changePassword
 };
