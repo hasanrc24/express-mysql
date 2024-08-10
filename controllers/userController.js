@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const db = require("../models");
-const { generateAccessAndRefreshToken } = require("../utils/utils");
+const { generateAccessAndRefreshToken, createPasswordResetToken } = require("../utils/utils");
 const jwt = require("jsonwebtoken");
 const { asyncHandler } = require("../utils/asyncHandler");
 const fs = require("fs");
@@ -8,6 +8,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const path = require("path");
 const upload = require("../middlewares/imageMiddleware");
+const sendEmail = require("../utils/email");
 
 const User = db.User;
 
@@ -219,6 +220,29 @@ const changePassword = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, {user: removePassword(req.user)}, "Password changed successfully"))
 })
 
+const forgotPassword = asyncHandler(async (req, res) => {
+  const {email} = req.body;
+
+  const user = await User.findOne({where: {email: email}})
+  if(!user){
+    throw new ApiError(404, "User doesn't exist")
+  }
+
+  const resetToken = createPasswordResetToken(user);
+  await user.save()
+
+  const resetURL = `${req.protocol}://${req.get('host')}/api/v1/user/reset-password/${resetToken}`
+  const message = `Please click the url: ${resetURL}. Valid for 10 minutes only.`
+
+  await sendEmail({
+    email: user.email,
+    subject: 'Reset your password',
+    message: message
+  })
+
+  res.status(200).send(new ApiResponse(200, {}, 'Please check your email to reset the password'))
+})
+
 module.exports = {
   getusers,
   createUser,
@@ -227,5 +251,6 @@ module.exports = {
   userLogout,
   refreshAccessToken,
   updateUser,
-  changePassword
+  changePassword,
+  forgotPassword
 };
