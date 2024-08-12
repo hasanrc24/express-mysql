@@ -8,7 +8,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const ApiError = require("../utils/ApiError");
 const path = require("path");
 const upload = require("../middlewares/imageMiddleware");
-const sendEmail = require("../utils/email");
+const Email = require("../utils/email");
 const { Op } = require('sequelize');
 
 const User = db.User;
@@ -232,14 +232,17 @@ const forgotPassword = asyncHandler(async (req, res) => {
   const resetToken = createPasswordResetToken(user);
   await user.save()
 
-  const resetURL = `${req.protocol}://${req.get('host')}/api/v1/user/reset-password/${resetToken}`
-  const message = `Please click the url: ${resetURL}. Valid for 10 minutes only.`
+  const baseUrl = `${req.protocol}://${req.get('host')}/`
+  // const resetURL = `${req.protocol}://${req.get('host')}/api/v1/user/reset-password/${resetToken}`
+  // const message = `Please click the url: ${resetURL}. Valid for 10 minutes only.`
 
-  await sendEmail({
-    email: user.email,
-    subject: 'Reset your password',
-    message: message
-  })
+  // await sendEmail({
+  //   email: user.email,
+  //   subject: 'Reset your password',
+  //   message: message
+  // })
+
+  await new Email(user, baseUrl, resetToken).sendResetEmail()
 
   res.status(200).send(new ApiResponse(200, {}, 'Please check your email to reset the password'))
 })
