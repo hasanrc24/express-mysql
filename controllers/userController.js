@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const db = require("../models");
-const { generateAccessAndRefreshToken, createPasswordResetToken, getCryptoEncryptedToken } = require("../utils/utils");
+const { generateAccessAndRefreshToken, createPasswordResetToken, getCryptoEncryptedToken, createUserVerificationToken } = require("../utils/utils");
 const jwt = require("jsonwebtoken");
 const { asyncHandler } = require("../utils/asyncHandler");
 const fs = require("fs");
@@ -57,12 +57,19 @@ const createUser = asyncHandler(async (req, res) => {
     fs.writeFileSync(filePath, file.buffer);
     newUser.profileImage = `/uploads/${filename}`
   }
+
   const user = await User.create(newUser);
+
+  const userVerificationToken = createUserVerificationToken(user)
+  await user.save()
+  const baseUrl = `${req.protocol}://${req.get('host')}/`
+  await new Email(user, baseUrl, userVerificationToken).sendVerificationEmail()
+
   const jsonUser = user.toJSON()
   delete jsonUser.password
   res
     .status(201)
-    .json(new ApiResponse(201, { user: jsonUser }, "Users created successfully!"));
+    .json(new ApiResponse(201, {  }, "A verification email is sent!"));
 });
 
 const updateUser = asyncHandler(async (req, res) => {
@@ -137,6 +144,11 @@ const userLogin = asyncHandler(async (req, res) => {
   if (!isPasswordValid) {
     throw new ApiError(400, "Invalid email or passowrd");
   }
+  
+  if(!user.verified){
+    throw new ApiError(400, "Please verify your account");
+  }
+
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
     user?.uuid
   );
@@ -275,6 +287,26 @@ const resetPassword = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, {}, "Password updated successfully"))
 })
 
+const verifyRegistration = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  if(!token){
+    throw new ApiError(400, "Token is not provided!")
+  }
+  const hashedToken = getCryptoEncryptedToken(token)
+
+  const user = await User.findOne({where: {verificationToken: hashedToken}})
+
+  if(!user){
+    throw new ApiError(400, 'Invalid token')
+  }
+
+  await user.update({
+    verified: true,
+    verificationToken: null
+  })
+  res.status(200).json(new ApiResponse(200, {user}, "User verified successfully"))
+})
+
 module.exports = {
   getusers,
   createUser,
@@ -285,5 +317,6 @@ module.exports = {
   updateUser,
   changePassword,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  verifyRegistration
 };

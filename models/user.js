@@ -34,16 +34,25 @@ module.exports = (sequelize, DataTypes) => {
     resetTokenExpire: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    verified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    verificationToken: {
+      type: DataTypes.STRING,
+      allowNull: true
     }
   }, {
     sequelize,
     modelName: 'User',
     defaultScope: {
-      attributes: { exclude: ['password', 'passwordResetToken', 'resetTokenExpire'] },
+      attributes: { exclude: ['password', 'passwordResetToken', 'resetTokenExpire', 'verificationToken'] },
     },
     scopes: {
       withPassword: {
-        attributes: { exclude: ['passwordResetToken', 'resetTokenExpire'] },
+        attributes: { exclude: ['passwordResetToken', 'resetTokenExpire', 'verificationToken'] },
       },
     },
   });

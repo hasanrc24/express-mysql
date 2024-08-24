@@ -48,4 +48,10 @@ const createPasswordResetToken = (user) => {
   return resetToken
 }
 
-module.exports = { generateAccessAndRefreshToken, multerErrorHandler, createPasswordResetToken, getCryptoToken, getCryptoEncryptedToken };
+const createUserVerificationToken = (user) => {
+  const resetToken = getCryptoToken();
+  user.verificationToken = getCryptoEncryptedToken(resetToken)
+  return resetToken
+}
+
+module.exports = { generateAccessAndRefreshToken, multerErrorHandler, createPasswordResetToken, getCryptoToken, getCryptoEncryptedToken, createUserVerificationToken };

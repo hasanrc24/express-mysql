@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const resetEmail = require("../emails/resetEmail");
+const verificationEmail = require("../emails/verificationEmail");
 
 module.exports = class Email{
     constructor(user, baseUrl, code){
@@ -38,6 +39,10 @@ module.exports = class Email{
 
     async sendResetEmail(){
         await this.send(resetEmail, 'Reset your password')
+    }
+
+    async sendVerificationEmail(){
+        await this.send(verificationEmail, 'Verify your account.')
     }
 }
 
